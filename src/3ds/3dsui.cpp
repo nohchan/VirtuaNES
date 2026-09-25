@@ -290,6 +290,7 @@ void ui3dsDrawChar(uint16 *frameBuffer, int x, int y, int color565, uint8 c)
 //---------------------------------------------------------------
 int ui3dsGetStringWidth(char *s, int startPos = 0, int endPos = 0xffff)
 {
+   /*
     int totalWidth = 0;
     for (int i = startPos; i <= endPos; i++)
     {
@@ -298,6 +299,45 @@ int ui3dsGetStringWidth(char *s, int startPos = 0, int endPos = 0xffff)
             break;
         totalWidth += fontWidth[c];
     }   
+    return totalWidth;
+    */
+
+    if (s == NULL || s[0] == '\0' || startPos < 0)
+        return 0;
+
+    int totalWidth = 0;
+    
+    // 指定された開始位置までポインタを進める
+    uint8_t *p = (uint8_t *)(s + startPos);
+    
+    // 現在の読み込みバイト位置を追跡するためのカウンター
+    int currentBytePos = startPos;
+
+    // 文字列の終端、または終了位置に達するまでループ
+    while (*p && currentBytePos < endPos) 
+    {
+        if (*p < 0x80) 
+        {
+            // 1バイト文字（半角英数字）は幅8ピクセル
+            totalWidth += 8;
+            p++;
+            currentBytePos++;
+        } 
+        else 
+        {
+            // マルチバイト文字（日本語など全角）は幅16ピクセル
+            totalWidth += 16;
+            
+            // UTF-8のバイト数に応じてポインタとカウンターをスキップさせる
+            int bytes = 1;
+            if ((*p & 0xE0) == 0xC0)      bytes = 2; // 2バイト文字
+            else if ((*p & 0xF0) == 0xE0) bytes = 3; // 3バイト文字（日本語の多く）
+            else if ((*p & 0xF8) == 0xF0) bytes = 4; // 4バイト文字
+            
+            p += bytes;
+            currentBytePos += bytes;
+        }
+    }
     return totalWidth;
 }
 
