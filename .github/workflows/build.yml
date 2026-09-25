@@ -18,12 +18,14 @@ jobs:
 
     - name: Build PicoDrive (Mega Drive)
       run: |
-        # 各メイクファイルから、標準ライブラリを破壊する「-D_NOTHROW」の設定行を自動で完全消去します
+        # 核心：大元の「Makefile」の41行目にある呪いのマクロオプションを完全に消し去ります
+        sed -i 's/-D_NOTHROW=//g' Makefile
+        
+        # 念のため、他のサブメイクファイルからも全て消去します
         sed -i 's/-D_NOTHROW=//g' picodrive-make
         sed -i 's/-D_NOTHROW=//g' virtuanes-make
         sed -i 's/-D_NOTHROW=//g' temperpce-make
         
-        # 不要なオプションを削り、3DS本来の綺麗な設定だけでビルドを実行します
         make -f picodrive-make clean
         make -f picodrive-make
 
