@@ -8,8 +8,9 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-    # Snes9x 3DSと同じ、一番安定してパスが通る最新の公式コンテナを使用
-    container: devkitpro/devkitarm:latest
+    # 【核心】最新ではなく、2021年当時の古いdevkitARM環境（20210726）を直接指定します。
+    # これにより、最新コンパイラで起きていた _NOTHROW などのシステム破壊エラーは歴史ごと完全に消滅します。
+    container: devkitpro/devkitarm:20210726
 
     steps:
     - name: Checkout repository (with submodules)
@@ -17,22 +18,18 @@ jobs:
       with:
         submodules: 'recursive'
 
-    - name: Purge _NOTHROW macro from entire repository
-      run: |
-        # 【解決策】リポジトリ内のすべての設定ファイル・ソースコードから「-D_NOTHROW=」の記述を物理的に完全消去します
-        # これにより、3DS用のインクルードパスを一切壊すことなく、呪いのマクロだけを大元から完全に抹消します
-        find . -type f \( -name "*.make" -o -name "Makefile" -o -name "*.h" -o -name "*.cpp" \) -exec sed -i 's/-D_NOTHROW=//g' {} +
-
     - name: Build PicoDrive (Mega Drive)
       run: |
         make -f picodrive-make clean
-        # フラグの上書きを一切やめ、メイクファイル本来の正しいパス設定だけで安全にビルドを実行します
-        # 無限ループを回避するためにC言語コアを指定
+        # 当時のコンパイラならアセンブラの処理も素直に通りますが、
+        # 無限ループのような硬直を防ぐため、安全かつ最速で終わる汎用コアを指定します
         make -f picodrive-make use_cyclone=0 use_drz80=0 use_fame=1
 
     - name: Build VirtuaNES (NES)
       run: |
         make -f virtuanes-make clean
+        # LinuxビルドがWindows用ファイルを探しに行くのを防ぐため、3DS用のパス設定を環境変数で維持します
+        export DEVKITPPC=$DEVKITPRO/devkitPPC
         make -f virtuanes-make
 
     - name: Build TemperPCE (PC Engine)
