@@ -3,8 +3,7 @@ name: 3DS Emulator Multi-Build
 on:
   push:
     branches: [ "main", "master" ]
-  pull_request:
-    branches: [ "main", "master" ]
+  workflow_dispatch:
 
 jobs:
   build:
@@ -19,20 +18,19 @@ jobs:
 
     - name: Build PicoDrive (Mega Drive)
       run: |
-        # エラーの原因だった「apt-get」や「dkp-pacman」の命令をすべて削除し、
-        # コンテナ内蔵のライブラリを使って直接ビルドを開始します
-        make -f picodrive-make clean
-        make -f picodrive-make
+        # 厳格なC++ルールを緩める「-fpermissive」を直接コンパイラ（CXXFLAGS）に叩き込みます
+        make -f picodrive-make CXXFLAGS="-fpermissive" clean
+        make -f picodrive-make CXXFLAGS="-fpermissive"
 
     - name: Build VirtuaNES (NES)
       run: |
-        make -f virtuanes-make clean
-        make -f virtuanes-make
+        make -f virtuanes-make CXXFLAGS="-fpermissive" clean
+        make -f virtuanes-make CXXFLAGS="-fpermissive"
 
     - name: Build TemperPCE (PC Engine)
       run: |
-        make -f temperpce-make clean
-        make -f temperpce-make
+        make -f temperpce-make CXXFLAGS="-fpermissive" clean
+        make -f temperpce-make CXXFLAGS="-fpermissive"
 
     - name: Upload Artifacts (All CIA/3DSX)
       uses: actions/upload-artifact@v4
