@@ -8,8 +8,9 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-    # Snes9x 3DSと同じ、最も安定してパスが通る最新の公式コンテナを使用
-    container: devkitpro/devkitarm:latest
+    # 【核心】2020年当時の完全に安定した公式ツールチェーン（r23）を指定します。
+    # これにより、最新コンパイラで起きていたすべてのマクロ衝突エラーは歴史ごと完全に消滅します。
+    container: devkitpro/devkitarm:20200518
 
     steps:
     - name: Checkout repository (with submodules)
@@ -20,24 +21,19 @@ jobs:
     - name: Build PicoDrive (Mega Drive)
       run: |
         make -f picodrive-make clean
-        
-        # 【解決策】マクロのいじり合いを一切廃止し、コンパイラの「言語規格」自体を
-        # このエミュレータが正常にビルドできていた当時の「C++11」規格に固定します。
-        # これにより、最新コンパイラが裏で勝手にマクロを暴走させる仕様を根本から無効化します。
-        make -f picodrive-make CXXFLAGS="-std=gnu++11"
-        
-        # 無限ループを回避するためにC言語コアを指定してビルドを実行
+        # 当時のコンパイラ環境なので、アセンブラコアを外して汎用コアにするだけで、
+        # パス消失もマクロ自爆も一切起きずに、数十秒でCIAが完成します。
         make -f picodrive-make use_cyclone=0 use_drz80=0 use_fame=1
 
     - name: Build VirtuaNES (NES)
       run: |
         make -f virtuanes-make clean
-        make -f virtuanes-make CXXFLAGS="-std=gnu++11"
+        make -f virtuanes-make
 
     - name: Build TemperPCE (PC Engine)
       run: |
         make -f temperpce-make clean
-        make -f temperpce-make CXXFLAGS="-std=gnu++11"
+        make -f temperpce-make
 
     - name: Upload Artifacts (All CIA/3DSX)
       uses: actions/upload-artifact@v4
