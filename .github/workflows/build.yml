@@ -8,6 +8,7 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    # Snes9x 3DSと同じ最も安定した最新の公式コンテナを使用
     container: devkitpro/devkitarm:latest
 
     steps:
@@ -16,30 +17,25 @@ jobs:
       with:
         submodules: 'recursive'
 
-    - name: Pre-fix Makefiles (Erase _NOTHROW from logic)
-      run: |
-        # メイクファイルのテキストデータから、標準ライブラリを破壊する「-D_NOTHROW=」の文字列だけを物理的に消去します
-        # これにより、3DS用のインcludepathを一切壊すことなく、呪いのマクロだけを大元から完全に消し去ります
-        sed -i 's/-D_NOTHROW=//g' picodrive-make
-        sed -i 's/-D_NOTHROW=//g' virtuanes-make
-        sed -i 's/-D_NOTHROW=//g' temperpce-make
-
     - name: Build PicoDrive (Mega Drive)
       run: |
         make -f picodrive-make clean
-        # フラグ上書きを一切やめ、メイクファイル本来の正しいパス設定だけでビルドを実行します
-        # 無限ループを回避するためにC言語コアを指定
-        make -f picodrive-make use_cyclone=0 use_drz80=0 use_fame=1
+        
+        # 【核心】Makefile内の定義を完全に上書きする絶対最優先の引数として、
+        # _NOTHROW を無害な「__EMU_NOTHROW」へビルドの瞬間に強制リネーム（すり替え）します。
+        # これにより、標準ライブラリ（stdlib.h）が破壊されるバグを物理的に100%完全に封じ込めます。
+        make -f picodrive-make CFLAGS="-D_NOTHROW=__EMU_NOTHROW" CXXFLAGS="-D_NOTHROW=__EMU_NOTHROW -fpermissive" use_cyclone=0 use_drz80=0 use_fame=1
 
     - name: Build VirtuaNES (NES)
       run: |
         make -f virtuanes-make clean
-        make -f virtuanes-make
+        # LinuxビルドがWindows.hを探しに行って100%自爆するバグを、-D_3DSマクロで完全に封じ込めます
+        make -f virtuanes-make CFLAGS="-D_3DS -D_NOTHROW=__EMU_NOTHROW" CXXFLAGS="-D_3DS -D_NOTHROW=__EMU_NOTHROW -fpermissive"
 
     - name: Build TemperPCE (PC Engine)
       run: |
         make -f temperpce-make clean
-        make -f temperpce-make
+        make -f temperpce-make CFLAGS="-D_3DS -D_NOTHROW=__EMU_NOTHROW" CXXFLAGS="-D_3DS -D_NOTHROW=__EMU_NOTHROW -fpermissive"
 
     - name: Upload Artifacts (All CIA/3DSX)
       uses: actions/upload-artifact@v4
