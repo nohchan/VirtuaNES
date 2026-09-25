@@ -1,4 +1,4 @@
-name: 3DS Emulator Auto Build
+name: 3DS Emulator Multi-Build
 
 on:
   push:
@@ -15,7 +15,7 @@ jobs:
     - name: Checkout repository (with submodules)
       uses: actions/checkout@v4
       with:
-        submodules: 'recursive' # 👈 空っぽの外部フォルダを自動で全部ダウンロードする命令
+        submodules: 'recursive'
 
     - name: Install 3DS dependency libraries
       run: |
@@ -24,6 +24,23 @@ jobs:
 
     - name: Build PicoDrive (Mega Drive)
       run: |
-        # 👈 メガドライブ版（PicoDrive）専用のメイクコマンドを実行
         make -f picodrive-make clean
         make -f picodrive-make
+
+    - name: Build VirtuaNES (NES)
+      run: |
+        make -f virtuanes-make clean
+        make -f virtuanes-make
+
+    - name: Build TemperPCE (PC Engine)
+      run: |
+        make -f temperpce-make clean
+        make -f temperpce-make
+
+    - name: Upload Artifacts (All CIA/3DSX)
+      uses: actions/upload-artifact@v4
+      with:
+        name: 3ds-emulators-all-build
+        path: |
+          *.cia
+          *.3dsx
