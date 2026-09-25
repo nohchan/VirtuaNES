@@ -16,29 +16,28 @@ jobs:
       with:
         submodules: 'recursive'
 
+    - name: Erase Row _NOTHROW (Physical Delete)
+      run: |
+        # 各メイクファイルの中身から、標準ライブラリを破壊する「-D_NOTHROW=」を物理的に完全消去します
+        # これにより、コンパイラへ呪いのマクロが引き渡されるのを大元から完全にシャットアウトします
+        sed -i 's/-D_NOTHROW=//g' picodrive-make
+        sed -i 's/-D_NOTHROW=//g' virtuanes-make
+        sed -i 's/-D_NOTHROW=//g' temperpce-make
+
     - name: Build PicoDrive (Mega Drive)
       run: |
         make -f picodrive-make clean
-        # 【解決策】3DSのパス環境（CFLAGS/CXXFLAGS）を一切破壊せず、
-        # 後ろから安全に「マクロ消滅命令（-U）」を合流させる公式の環境変数を使います
-        export AM_CFLAGS="-U_NOTHROW"
-        export AM_CXXFLAGS="-U_NOTHROW -fpermissive"
-        
-        # 無限ループを回避するためにC言語コアを指定してビルドを実行
+        # 無限ループを完全に回避するため、アセンブラコアを外して汎用C言語コア（use_cyclone=0）で爆速ビルド
         make -f picodrive-make use_cyclone=0 use_drz80=0 use_fame=1
 
     - name: Build VirtuaNES (NES)
       run: |
         make -f virtuanes-make clean
-        export AM_CFLAGS="-U_NOTHROW -D_3DS"
-        export AM_CXXFLAGS="-U_NOTHROW -fpermissive -D_3DS"
         make -f virtuanes-make
 
     - name: Build TemperPCE (PC Engine)
       run: |
         make -f temperpce-make clean
-        export AM_CFLAGS="-U_NOTHROW -D_3DS"
-        export AM_CXXFLAGS="-U_NOTHROW -fpermissive -D_3DS"
         make -f temperpce-make
 
     - name: Upload Artifacts (All CIA/3DSX)
