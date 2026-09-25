@@ -18,19 +18,22 @@ jobs:
 
     - name: Build PicoDrive (Mega Drive)
       run: |
-        # 厳格なC++ルールを緩める「-fpermissive」を直接コンパイラ（CXXFLAGS）に叩き込みます
-        make -f picodrive-make CXXFLAGS="-fpermissive" clean
-        make -f picodrive-make CXXFLAGS="-fpermissive"
+        make -f picodrive-make clean
+        # CXXFLAGSを上書きするのではなく、環境変数として後ろからマクロを大目にみるオプションを追加します
+        export CXXFLAGS="$CXXFLAGS -fpermissive"
+        make -f picodrive-make
 
     - name: Build VirtuaNES (NES)
       run: |
-        make -f virtuanes-make CXXFLAGS="-fpermissive" clean
-        make -f virtuanes-make CXXFLAGS="-fpermissive"
+        make -f virtuanes-make clean
+        export CXXFLAGS="$CXXFLAGS -fpermissive"
+        make -f virtuanes-make
 
     - name: Build TemperPCE (PC Engine)
       run: |
-        make -f temperpce-make CXXFLAGS="-fpermissive" clean
-        make -f temperpce-make CXXFLAGS="-fpermissive"
+        make -f temperpce-make clean
+        export CXXFLAGS="$CXXFLAGS -fpermissive"
+        make -f temperpce-make
 
     - name: Upload Artifacts (All CIA/3DSX)
       uses: actions/upload-artifact@v4
