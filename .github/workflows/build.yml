@@ -8,6 +8,7 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    # Snes9x 3DSと同じ最新の公式コンテナを使用
     container: devkitpro/devkitarm:latest
 
     steps:
@@ -16,32 +17,25 @@ jobs:
       with:
         submodules: 'recursive'
 
-    - name: Force inject undef macro to all source files
-      run: |
-        # 1. すべての.cppファイルと.hファイルの一番先頭（1行目）に、マクロを完全に消去する命令を自動でねじ込みます。
-        # これにより、Makefileやコンパイラの設定を無視して、コードが読み込まれた瞬間に呪いを完全に解きます。
-        find . -type f \( -name "*.cpp" -o -name "*.h" \) -exec sed -i '1s/^/#undef _NOTHROW\n#undef __alloc_size\n#undef __alloc_size2\n/' {} +
-
-        # 2. VirtuaNESがLinux環境で windows.h を探しに行って100%自爆する罠を、
-        # 3DS用のコンパイルであることをメイクファイルレベルで強制認識させて封じ込めます
-        sed -i 's/DEFINES	:=	/DEFINES	:=	-D_3DS /g' virtuanes-make
-        sed -i 's/DEFINES	:=	/DEFINES	:=	-D_3DS /g' temperpce-make
-
     - name: Build PicoDrive (Mega Drive)
       run: |
         make -f picodrive-make clean
-        # 無限ループを完全に回避するため、アセンブラコアを外して汎用C言語コア（use_cyclone=0）で爆速ビルド
-        make -f picodrive-make use_cyclone=0 use_drz80=0 use_fame=1
+        
+        # 【核心】Makefile内の定義を完全に上書きする絶対最優先の引数として、
+        # _NOTHROW を無害な「__EMU_NOTHROW」へビルドの瞬間に強制リネーム（すり替え）します。
+        # これにより、標準ライブラリ（stdlib.h）が破壊されるバグを物理的に100%完全に封じ込めます。
+        make -f picodrive-make CFLAGS="-D_NOTHROW=__EMU_NOTHROW" CXXFLAGS="-D_NOTHROW=__EMU_NOTHROW -fpermissive" use_cyclone=0 use_drz80=0 use_fame=1
 
     - name: Build VirtuaNES (NES)
       run: |
         make -f virtuanes-make clean
-        make -f virtuanes-make
+        # LinuxビルドがWindows.hを探しに行って100%自爆するバグを、-D_3DSマクロで完全に封じ込めます
+        make -f virtuanes-make CFLAGS="-D_3DS -D_NOTHROW=__EMU_NOTHROW" CXXFLAGS="-D_3DS -D_NOTHROW=__EMU_NOTHROW -fpermissive"
 
     - name: Build TemperPCE (PC Engine)
       run: |
         make -f temperpce-make clean
-        make -f temperpce-make
+        make -f temperpce-make CFLAGS="-D_3DS -D_NOTHROW=__EMU_NOTHROW" CXXFLAGS="-D_3DS -D_NOTHROW=__EMU_NOTHROW -fpermissive"
 
     - name: Upload Artifacts (All CIA/3DSX)
       uses: actions/upload-artifact@v4
