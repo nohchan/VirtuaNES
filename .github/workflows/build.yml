@@ -17,13 +17,10 @@ jobs:
       with:
         submodules: 'recursive'
 
-    - name: Install 3DS dependency libraries
-      run: |
-        apt-get update && apt-get install -y make
-        dkp-pacman -Syu --noconfirm 3ds-dev 3ds-libctru 3ds-citro3d 3ds-citro2d
-
     - name: Build PicoDrive (Mega Drive)
       run: |
+        # エラーの原因だった「apt-get」や「dkp-pacman」の命令をすべて削除し、
+        # コンテナ内蔵のライブラリを使って直接ビルドを開始します
         make -f picodrive-make clean
         make -f picodrive-make
 
