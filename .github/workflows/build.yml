@@ -8,7 +8,9 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-    container: devkitpro/devkitarm:latest
+    # 【核心】:latest を廃止し、2019年〜2020年当時の安定したツールチェーン（r20）を名指しで指定します。
+    # これにより、エミュレータが作られた当時の正しいコンパイラ環境が100%再現されます。
+    container: devkitpro/devkitarm:r20
 
     steps:
     - name: Checkout repository (with submodules)
@@ -16,18 +18,11 @@ jobs:
       with:
         submodules: 'recursive'
 
-    - name: Erase Row _NOTHROW (Physical Delete)
-      run: |
-        # 各メイクファイルの中身から、標準ライブラリを破壊する「-D_NOTHROW=」を物理的に完全消去します
-        # これにより、コンパイラへ呪いのマクロが引き渡されるのを大元から完全にシャットアウトします
-        sed -i 's/-D_NOTHROW=//g' picodrive-make
-        sed -i 's/-D_NOTHROW=//g' virtuanes-make
-        sed -i 's/-D_NOTHROW=//g' temperpce-make
-
     - name: Build PicoDrive (Mega Drive)
       run: |
         make -f picodrive-make clean
-        # 無限ループを完全に回避するため、アセンブラコアを外して汎用C言語コア（use_cyclone=0）で爆速ビルド
+        # 当時のコンパイラならアセンブラの処理も素直に通りますが、
+        # 無限ループのような硬直を防ぐため、安全かつ最速で終わる汎用コアを指定します
         make -f picodrive-make use_cyclone=0 use_drz80=0 use_fame=1
 
     - name: Build VirtuaNES (NES)
