@@ -18,26 +18,21 @@ jobs:
 
     - name: Build PicoDrive (Mega Drive)
       run: |
-        # 核心：大元の「Makefile」の41行目にある呪いのマクロオプションを完全に消し去ります
-        sed -i 's/-D_NOTHROW=//g' Makefile
-        
-        # 念のため、他のサブメイクファイルからも全て消去します
-        sed -i 's/-D_NOTHROW=//g' picodrive-make
-        sed -i 's/-D_NOTHROW=//g' virtuanes-make
-        sed -i 's/-D_NOTHROW=//g' temperpce-make
-        
         make -f picodrive-make clean
-        make -f picodrive-make
+        # 【解決策】コンパイラ引数「-U_NOTHROW」を直接叩き込み、定義されているマクロを強制消滅させます
+        # 同時に、無限ループの原因になる超重量アセンブラを回避（use_cyclone=0）させます
+        make -f picodrive-make CFLAGS="-U_NOTHROW" CXXFLAGS="-U_NOTHROW -fpermissive" use_cyclone=0 use_drz80=0 use_fame=1
 
     - name: Build VirtuaNES (NES)
       run: |
         make -f virtuanes-make clean
-        make -f virtuanes-make
+        # LinuxビルドがWindows.hを探しに行って自爆するバグを、-D_3DSマクロで完全に封じ込めます
+        make -f virtuanes-make CFLAGS="-D_3DS -U_NOTHROW" CXXFLAGS="-D_3DS -U_NOTHROW -fpermissive"
 
     - name: Build TemperPCE (PC Engine)
       run: |
         make -f temperpce-make clean
-        make -f temperpce-make
+        make -f temperpce-make CFLAGS="-D_3DS -U_NOTHROW" CXXFLAGS="-D_3DS -U_NOTHROW -fpermissive"
 
     - name: Upload Artifacts (All CIA/3DSX)
       uses: actions/upload-artifact@v4
