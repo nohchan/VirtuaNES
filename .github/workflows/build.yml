@@ -18,21 +18,24 @@ jobs:
 
     - name: Build PicoDrive (Mega Drive)
       run: |
+        # 3DSの環境を壊さずに、後ろからマクロ無効化とチェック緩和を安全に合流させます
+        # 同時にアセンブラの無限ループバグを回避（use_cyclone=0）させます
+        export CARCH="-fpermissive -U_NOTHROW"
+        
         make -f picodrive-make clean
-        # 【解決策】コンパイラ引数「-U_NOTHROW」を直接叩き込み、定義されているマクロを強制消滅させます
-        # 同時に、無限ループの原因になる超重量アセンブラを回避（use_cyclone=0）させます
-        make -f picodrive-make CFLAGS="-U_NOTHROW" CXXFLAGS="-U_NOTHROW -fpermissive" use_cyclone=0 use_drz80=0 use_fame=1
+        make -f picodrive-make use_cyclone=0 use_drz80=0 use_fame=1
 
     - name: Build VirtuaNES (NES)
       run: |
+        export CARCH="-fpermissive -U_NOTHROW -D_3DS"
         make -f virtuanes-make clean
-        # LinuxビルドがWindows.hを探しに行って自爆するバグを、-D_3DSマクロで完全に封じ込めます
-        make -f virtuanes-make CFLAGS="-D_3DS -U_NOTHROW" CXXFLAGS="-D_3DS -U_NOTHROW -fpermissive"
+        make -f virtuanes-make
 
     - name: Build TemperPCE (PC Engine)
       run: |
+        export CARCH="-fpermissive -U_NOTHROW -D_3DS"
         make -f temperpce-make clean
-        make -f temperpce-make CFLAGS="-D_3DS -U_NOTHROW" CXXFLAGS="-D_3DS -U_NOTHROW -fpermissive"
+        make -f temperpce-make
 
     - name: Upload Artifacts (All CIA/3DSX)
       uses: actions/upload-artifact@v4
