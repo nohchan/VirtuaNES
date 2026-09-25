@@ -8,9 +8,8 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-    # 【核心】最新ではなく、2021年当時の古いdevkitARM環境（20210726）を直接指定します。
-    # これにより、最新コンパイラで起きていた _NOTHROW などのシステム破壊エラーは歴史ごと完全に消滅します。
-    container: devkitpro/devkitarm:20210726
+    # Snes9x 3DSと同じ、一番安定してパスが通る最新の公式コンテナに戻します
+    container: devkitpro/devkitarm:latest
 
     steps:
     - name: Checkout repository (with submodules)
@@ -18,18 +17,27 @@ jobs:
       with:
         submodules: 'recursive'
 
+    - name: Force inject undef macro to all source files
+      run: |
+        # 【解決策】すべての .cpp と .h ファイルの一番先頭（1行目）に、マクロを完全に消去する命令を自動でねじ込みます。
+        # これにより、Makefileの構造を完全に無視して、コードが読み込まれた瞬間に呪いを物理的に解きます。
+        find . -type f \( -name "*.cpp" -o -name "*.h" \) -exec sed -i '1s/^/#undef _NOTHROW\n#undef __alloc_size\n#undef __alloc_size2\n/' {} +
+
+        # VirtuaNESがLinux環境で windows.h を探しに行って100%自爆する罠を、
+        # 3DS用のコンパイルであることをメイクファイルレベルで強制認識させて封じ込めます
+        sed -i 's/DEFINES	:=	/DEFINES	:=	-D_3DS /g' virtuanes-make
+        sed -i 's/DEFINES	:=	/DEFINES	:=	-D_3DS /g' temperpce-make
+
     - name: Build PicoDrive (Mega Drive)
       run: |
         make -f picodrive-make clean
-        # 当時のコンパイラならアセンブラの処理も素直に通りますが、
-        # 無限ループのような硬直を防ぐため、安全かつ最速で終わる汎用コアを指定します
+        # フラグの上書きを一切やめ、メイクファイル本来の正しいパス設定だけで安全にビルドを実行します
+        # 無限ループを回避するためにC言語コアを指定
         make -f picodrive-make use_cyclone=0 use_drz80=0 use_fame=1
 
     - name: Build VirtuaNES (NES)
       run: |
         make -f virtuanes-make clean
-        # LinuxビルドがWindows用ファイルを探しに行くのを防ぐため、3DS用のパス設定を環境変数で維持します
-        export DEVKITPPC=$DEVKITPRO/devkitPPC
         make -f virtuanes-make
 
     - name: Build TemperPCE (PC Engine)
