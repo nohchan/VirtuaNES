@@ -8,9 +8,8 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-    # 【核心】実在する2022年当時の安定ツールチェーン（20220531）を指定します。
-    # これにより、エミュレータが想定していた正しいコンパイラ環境が100%再現されます。
-    container: devkitpro/devkitarm:20220531
+    # Snes9xと同じ最新の公式コンテナに戻します
+    container: devkitpro/devkitarm:latest
 
     steps:
     - name: Checkout repository (with submodules)
@@ -18,11 +17,21 @@ jobs:
       with:
         submodules: 'recursive'
 
+    - name: Purge _NOTHROW macro and windows.h from source
+      run: |
+        # 1. リポジトリ内のすべてのメイクファイルやソースコードから「-D_NOTHROW=」の記述を物理的に完全消去します
+        # これにより、どの共通ヘッダに隠れていようともマクロの呪いを一網打尽に消滅させます
+        find . -type f \( -name "*.make" -o -name "Makefile" -o -name "*.h" -o -name "*.cpp" \) -exec sed -i 's/-D_NOTHROW=//g' {} +
+
+        # 2. VirtuaNESがLinux環境で windows.h を探しに行って100%自爆する罠を、
+        # 3DS用のコンパイルであることをメイクファイルレベルで強制認識させて封じ込めます
+        sed -i 's/DEFINES	:=	/DEFINES	:=	-D_3DS /g' virtuanes-make
+        sed -i 's/DEFINES	:=	/DEFINES	:=	-D_3DS /g' temperpce-make
+
     - name: Build PicoDrive (Mega Drive)
       run: |
         make -f picodrive-make clean
-        # 当時のコンパイラならアセンブラの処理も素直に通りますが、
-        # 無限ループのような硬直を防ぐため、安全かつ最速で終わる汎用コアを指定します
+        # 無限ループを完全に回避するため、アセンブラコアを外して汎用C言語コア（use_cyclone=0）で爆速ビルド
         make -f picodrive-make use_cyclone=0 use_drz80=0 use_fame=1
 
     - name: Build VirtuaNES (NES)
