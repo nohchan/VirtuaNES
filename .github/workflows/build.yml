@@ -1,5 +1,5 @@
 name: 3DS Emulator Multi-Build
- 
+
 on:
   push:
     branches: [ "main", "master" ]
@@ -8,7 +8,6 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-    # Snes9x 3DSと同じ、一番安定してパスが通る最新の公式コンテナを使用
     container: devkitpro/devkitarm:latest
 
     steps:
@@ -21,26 +20,26 @@ jobs:
       run: |
         make -f picodrive-make clean
         
-        # 【解決策】3DSのパス環境を一切破壊せず、後ろから安全に「マクロ強制すり替え（リネーム）」を合流させます
-        export AM_CFLAGS="-D_NOTHROW=__EMU_NOTHROW"
-        export AM_CXXFLAGS="-D_NOTHROW=__EMU_NOTHROW -fpermissive"
-        
-        # 無限ループを回避するためにC言語コアを指定してビルドを実行
-        make -f picodrive-make use_cyclone=0 use_drz80=0 use_fame=1
+        # 【核心】コンパイラ起動コマンド自体にリネームオプションを直接常時付与します。
+        # これにより、3DS用のパス設定を一切破壊せず、Makefile内の上書きを強制突破してマクロを無害化します。
+        make -f picodrive-make \
+          CC="arm-none-eabi-gcc -D_NOTHROW=__EMU_NOTHROW" \
+          CXX="arm-none-eabi-g++ -D_NOTHROW=__EMU_NOTHROW -fpermissive" \
+          use_cyclone=0 use_drz80=0 use_fame=1
 
     - name: Build VirtuaNES (NES)
       run: |
         make -f virtuanes-make clean
-        export AM_CFLAGS="-D_NOTHROW=__EMU_NOTHROW -D_3DS"
-        export AM_CXXFLAGS="-D_NOTHROW=__EMU_NOTHROW -fpermissive -D_3DS"
-        make -f virtuanes-make
+        make -f virtuanes-make \
+          CC="arm-none-eabi-gcc -D_NOTHROW=__EMU_NOTHROW -D_3DS" \
+          CXX="arm-none-eabi-g++ -D_NOTHROW=__EMU_NOTHROW -fpermissive -D_3DS"
 
     - name: Build TemperPCE (PC Engine)
       run: |
         make -f temperpce-make clean
-        export AM_CFLAGS="-D_NOTHROW=__EMU_NOTHROW -D_3DS"
-        export AM_CXXFLAGS="-D_NOTHROW=__EMU_NOTHROW -fpermissive -D_3DS"
-        make -f temperpce-make
+        make -f temperpce-make \
+          CC="arm-none-eabi-gcc -D_NOTHROW=__EMU_NOTHROW -D_3DS" \
+          CXX="arm-none-eabi-g++ -D_NOTHROW=__EMU_NOTHROW -fpermissive -D_3DS"
 
     - name: Upload Artifacts (All CIA/3DSX)
       uses: actions/upload-artifact@v4
