@@ -8,7 +8,6 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-    # Snes9xと同じ、最も安定してパスが通る最新の公式コンテナに戻します
     container: devkitpro/devkitarm:latest
 
     steps:
@@ -17,30 +16,31 @@ jobs:
       with:
         submodules: 'recursive'
 
+    - name: Force inject undef macro to all source files
+      run: |
+        # 1. すべての.cppファイルと.hファイルの一番先頭（1行目）に、マクロを完全に消去する命令を自動でねじ込みます。
+        # これにより、Makefileやコンパイラの設定を無視して、コードが読み込まれた瞬間に呪いを完全に解きます。
+        find . -type f \( -name "*.cpp" -o -name "*.h" \) -exec sed -i '1s/^/#undef _NOTHROW\n#undef __alloc_size\n#undef __alloc_size2\n/' {} +
+
+        # 2. VirtuaNESがLinux環境で windows.h を探しに行って100%自爆する罠を、
+        # 3DS用のコンパイルであることをメイクファイルレベルで強制認識させて封じ込めます
+        sed -i 's/DEFINES	:=	/DEFINES	:=	-D_3DS /g' virtuanes-make
+        sed -i 's/DEFINES	:=	/DEFINES	:=	-D_3DS /g' temperpce-make
+
     - name: Build PicoDrive (Mega Drive)
       run: |
         make -f picodrive-make clean
-        
-        # 【核心】コンパイラが自動生成する _NOTHROW を、ビルドの瞬間に「__EMU_NOTHROW」へ強制すり替え（リネーム）します
-        # これにより、標準ライブラリ（stdlib.h）の破壊バグを100%完全に、根底から封じ込めます
-        export AM_CFLAGS="-D_NOTHROW=__EMU_NOTHROW"
-        export AM_CXXFLAGS="-D_NOTHROW=__EMU_NOTHROW -fpermissive"
-        
-        # 無限ループを回避するためにC言語コアを指定してビルドを実行
+        # 無限ループを完全に回避するため、アセンブラコアを外して汎用C言語コア（use_cyclone=0）で爆速ビルド
         make -f picodrive-make use_cyclone=0 use_drz80=0 use_fame=1
 
     - name: Build VirtuaNES (NES)
       run: |
         make -f virtuanes-make clean
-        export AM_CFLAGS="-D_NOTHROW=__EMU_NOTHROW -D_3DS"
-        export AM_CXXFLAGS="-D_NOTHROW=__EMU_NOTHROW -fpermissive -D_3DS"
         make -f virtuanes-make
 
     - name: Build TemperPCE (PC Engine)
       run: |
         make -f temperpce-make clean
-        export AM_CFLAGS="-D_NOTHROW=__EMU_NOTHROW -D_3DS"
-        export AM_CXXFLAGS="-D_NOTHROW=__EMU_NOTHROW -fpermissive -D_3DS"
         make -f temperpce-make
 
     - name: Upload Artifacts (All CIA/3DSX)
