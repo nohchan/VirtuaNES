@@ -290,7 +290,7 @@ void ui3dsDrawChar(uint16 *frameBuffer, int x, int y, int color565, uint8 c)
 //---------------------------------------------------------------
 int ui3dsGetStringWidth(char *s, int startPos = 0, int endPos = 0xffff)
 {
-   /*
+   #if 1
     int totalWidth = 0;
     for (int i = startPos; i <= endPos; i++)
     {
@@ -300,7 +300,7 @@ int ui3dsGetStringWidth(char *s, int startPos = 0, int endPos = 0xffff)
         totalWidth += fontWidth[c];
     }   
     return totalWidth;
-    */
+    #else
 
     if (s == NULL || s[0] == '\0' || startPos < 0)
         return 0;
@@ -339,6 +339,7 @@ int ui3dsGetStringWidth(char *s, int startPos = 0, int endPos = 0xffff)
         }
     }
     return totalWidth;
+    #endif
 }
 
 #define CONVERT_TO_565(x)    (((x & 0xf8) >> 3) | (((x >> 8) & 0xf8) << 3) | (((x >> 16) & 0xf8) << 8))
