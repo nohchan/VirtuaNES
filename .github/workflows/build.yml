@@ -18,27 +18,22 @@ jobs:
 
     - name: Build PicoDrive (Mega Drive)
       run: |
-        # コンパイラ（gcc/g++）の起動コマンドそのものの後ろに -fpermissive を直接常時付与します
-        # これにより、3DSのパス設定（CFLAGS/CXXFLAGS）を一切破壊せずに、エラーだけを大目に見せます
-        export CC="arm-none-eabi-gcc -fpermissive"
-        export CXX="arm-none-eabi-g++ -fpermissive"
+        # 各メイクファイルから、標準ライブラリを破壊する「-D_NOTHROW」の設定行を自動で完全消去します
+        sed -i 's/-D_NOTHROW=//g' picodrive-make
+        sed -i 's/-D_NOTHROW=//g' virtuanes-make
+        sed -i 's/-D_NOTHROW=//g' temperpce-make
         
+        # 不要なオプションを削り、3DS本来の綺麗な設定だけでビルドを実行します
         make -f picodrive-make clean
         make -f picodrive-make
 
     - name: Build VirtuaNES (NES)
       run: |
-        export CC="arm-none-eabi-gcc -fpermissive"
-        export CXX="arm-none-eabi-g++ -fpermissive"
-        
         make -f virtuanes-make clean
         make -f virtuanes-make
 
     - name: Build TemperPCE (PC Engine)
       run: |
-        export CC="arm-none-eabi-gcc -fpermissive"
-        export CXX="arm-none-eabi-g++ -fpermissive"
-        
         make -f temperpce-make clean
         make -f temperpce-make
 
