@@ -8,7 +8,7 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-    # Snes9x 3DSと同じ最も安定した最新の公式コンテナを使用
+    # Snes9x 3DSと同じ、最も安定してパスが通る最新の公式コンテナを使用
     container: devkitpro/devkitarm:latest
 
     steps:
@@ -21,28 +21,23 @@ jobs:
       run: |
         make -f picodrive-make clean
         
-        # 【核心】コンパイラの起動コマンド自体をジャックし、3DSのパス設定（CFLAGS/CXXFLAGS）を一切破壊せずに、
-        # _NOTHROW を無害な「__EMU_NOTHROW」へビルドの瞬間に強制リネーム（すり替え）します。
-        # これにより、標準ライブラリ（stdlib.h）が破壊されるバグを物理的に100%完全に封じ込めます。
-        make -f picodrive-make \
-          CC="arm-none-eabi-gcc -D_NOTHROW=__EMU_NOTHROW" \
-          CXX="arm-none-eabi-g++ -D_NOTHROW=__EMU_NOTHROW -fpermissive" \
-          use_cyclone=0 use_drz80=0 use_fame=1
+        # 【解決策】マクロのいじり合いを一切廃止し、コンパイラの「言語規格」自体を
+        # このエミュレータが正常にビルドできていた当時の「C++11」規格に固定します。
+        # これにより、最新コンパイラが裏で勝手にマクロを暴走させる仕様を根本から無効化します。
+        make -f picodrive-make CXXFLAGS="-std=gnu++11"
+        
+        # 無限ループを回避するためにC言語コアを指定してビルドを実行
+        make -f picodrive-make use_cyclone=0 use_drz80=0 use_fame=1
 
     - name: Build VirtuaNES (NES)
       run: |
         make -f virtuanes-make clean
-        # LinuxビルドがWindows.hを探しに行って100%自爆するバグを、-D_3DSマクロで完全に封じ込めます
-        make -f virtuanes-make \
-          CC="arm-none-eabi-gcc -D_NOTHROW=__EMU_NOTHROW -D_3DS" \
-          CXX="arm-none-eabi-g++ -D_NOTHROW=__EMU_NOTHROW -fpermissive -D_3DS"
+        make -f virtuanes-make CXXFLAGS="-std=gnu++11"
 
     - name: Build TemperPCE (PC Engine)
       run: |
         make -f temperpce-make clean
-        make -f temperpce-make \
-          CC="arm-none-eabi-gcc -D_NOTHROW=__EMU_NOTHROW -D_3DS" \
-          CXX="arm-none-eabi-g++ -D_NOTHROW=__EMU_NOTHROW -fpermissive -D_3DS"
+        make -f temperpce-make CXXFLAGS="-std=gnu++11"
 
     - name: Upload Artifacts (All CIA/3DSX)
       uses: actions/upload-artifact@v4
