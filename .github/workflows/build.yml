@@ -1,0 +1,37 @@
+name: Build 3DS Emulators
+
+on:
+  workflow_dispatch: # Web画面から手動でビルドを実行できるようにする設定
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    container: devkitpro/devkitarm:latest # devkitARM環境が最初から入っているDockerコンテナを使用
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install required libraries
+        run: |
+          # 3DSビルドに必要な libctru や citro3d などの依存関係を導入
+          dkp-pacman -Syu --noconfirm
+          dkp-pacman -S 3ds-dev --noconfirm
+
+      - name: Build VirtuaNES
+        run: make -f virtuanes-make
+
+      - name: Build PicoDrive
+        run: make -f picodrive-make
+
+      - name: Build TemperPCE
+        run: make -f temperpce-make
+
+      - name: Upload Build Artifacts
+        uses: actions/artifacts@v4
+        with:
+          name: 3ds-emulators
+          path: |
+            *.3dsx
+            *.cia
+            *.smdh
