@@ -1,4 +1,4 @@
-name: Build 3DS Emulators (Modern Base Environment)
+name: Build 3DS Emulators (No-Pacman Fix)
 
 on:
   workflow_dispatch:
@@ -6,27 +6,28 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-    # ⭕ 公式の最新コンパイル環境のみを使用
-    container: devkitpro/devkitarm:latest
+    # ⭕ 3DSビルド用のライブラリ群(libctru等)が、最初から「すべて導入・展開済み」の公式コンテナを指定します
+    # これにより dkp-pacman の 403 接続拒否エラーを完全に回避します
+    container: devkitpro/devkit3ds:latest
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Install 3DS Tools & Libraries
-        run: |
-          dkp-pacman -Syu --noconfirm
-          dkp-pacman -S 3ds-dev --noconfirm
+      # 🪄 dkp-pacman のステップを完全に消去しました。
+      # すでに環境は整っているので、そのまま3つのアプリのビルドへ進みます。
 
-      # 🛠️ 3つのアプリをストレートに実行します
       - name: Build VirtuaNES (FC)
-        run: make -f virtuanes-make
+        run: |
+          make -f virtuanes-make
 
       - name: Build PicoDrive (MD)
-        run: make -f picodrive-make
+        run: |
+          make -f picodrive-make
 
       - name: Build TemperPCE (PCE)
-        run: make -f temperpce-make
+        run: |
+          make -f temperpce-make
 
       - name: Upload Build Artifacts
         uses: actions/upload-artifact@v4
