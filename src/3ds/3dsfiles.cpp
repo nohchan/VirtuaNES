@@ -1,4 +1,4 @@
-#if 0
+#define _NOTHROW
 
 #include <algorithm>
 #include <string>
@@ -17,19 +17,6 @@
 
 #include "3dstypes.h"
 #include "3dsfiles.h"
-
-#else
-	
-#include <algorithm>
-#include <fstream>
-#include <unordered_map>
-#include <sys/stat.h>
-#include <unistd.h>
-#include <dirent.h>
-
-#include "3dsfiles.h"
-
-#endif
 
 static char currentDir[_MAX_PATH] = "";
 
