@@ -1,4 +1,4 @@
-name: Build 3DS Emulators (Archive Online)
+name: Build 3DS Emulators (Archive Online Fixed)
 
 on:
   workflow_dispatch:
@@ -11,28 +11,28 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # 📦 一度ビルドが成功すれば、2回目以降は一瞬で終わるキャッシュ機能
+      # 📦 2回目以降を爆速にするキャッシュ機能
       - name: Cache devkitPro Environment
         id: cache-devkitpro
         uses: actions/cache@v4
         with:
           path: /opt/devkitpro
-          key: devkitpro-archive-r45-v1
+          key: devkitpro-archive-r45-fixed-v1
 
-      - name: Setup Legacy devkitARM r45 (From Archive)
+      - name: Setup Legacy devkitARM r45 (From Direct Archive Link)
         if: steps.cache-devkitpro.outputs.cache-hit != 'true'
         run: |
           sudo mkdir -p /opt/devkitpro
           cd /opt
           
-          # 🏛️ 絶対に消えないインターネットアーカイブ（Wayback Machine）の永久保存リンクから直接ダウンロード
-          sudo wget https://archive.org
+          # 🏛️ アーカイブの直接ダウンロード用サーバー（web.archive.org/web/内容/ の形）から正確に取得します
+          sudo wget -O devkitARM_r45-x86_64-linux.tar.bz2 https://archive.org
           sudo tar -xjf devkitARM_r45-x86_64-linux.tar.bz2 -C devkitpro
           
-          sudo wget https://archive.org
+          sudo wget -O libctru-1.0.0.tar.bz2 https://archive.org
           sudo tar -xjf libctru-1.0.0.tar.bz2 -C devkitpro
           
-          sudo wget https://archive.org
+          sudo wget -O citro3d-1.0.0.tar.bz2 https://archive.org
           sudo tar -xjf citro3d-1.0.0.tar.bz2 -C devkitpro
 
       - name: Build VirtuaNES
