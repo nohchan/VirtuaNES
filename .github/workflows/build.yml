@@ -1,4 +1,4 @@
-name: Build 3DS Emulators (Archive Online Fixed)
+name: Build 3DS Emulators (Safe Direct Cloud Link)
 
 on:
   workflow_dispatch:
@@ -17,22 +17,25 @@ jobs:
         uses: actions/cache@v4
         with:
           path: /opt/devkitpro
-          key: devkitpro-archive-r45-fixed-v1
+          key: devkitpro-safe-cloud-r45-v1
 
-      - name: Setup Legacy devkitARM r45 (From Direct Archive Link)
+      # ⬇️ 2016年当時の本物のファイルを確実に直接ダウンロードします
+      - name: Setup Legacy devkitARM r45 (Direct Cloud Link)
         if: steps.cache-devkitpro.outputs.cache-hit != 'true'
         run: |
           sudo mkdir -p /opt/devkitpro
           cd /opt
           
-          # 🏛️ アーカイブの直接ダウンロード用サーバー（web.archive.org/web/内容/ の形）から正確に取得します
-          sudo wget -O devkitARM_r45-x86_64-linux.tar.bz2 https://archive.org
+          # devkitARM r45 (約36MB)
+          sudo wget -O devkitARM_r45-x86_64-linux.tar.bz2 "https://dropbox.com"
           sudo tar -xjf devkitARM_r45-x86_64-linux.tar.bz2 -C devkitpro
           
-          sudo wget -O libctru-1.0.0.tar.bz2 https://archive.org
+          # libctru v1.0.0 (約3MB)
+          sudo wget -O libctru-1.0.0.tar.bz2 "https://dropbox.com"
           sudo tar -xjf libctru-1.0.0.tar.bz2 -C devkitpro
           
-          sudo wget -O citro3d-1.0.0.tar.bz2 https://archive.org
+          # citro3d v1.0.0 (約150KB)
+          sudo wget -O citro3d-1.0.0.tar.bz2 "https://dropbox.com"
           sudo tar -xjf citro3d-1.0.0.tar.bz2 -C devkitpro
 
       - name: Build VirtuaNES
