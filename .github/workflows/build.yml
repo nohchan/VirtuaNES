@@ -1,58 +1,32 @@
-name: Build 3DS Emulators (Official GitHub Storage)
+name: Build 3DS Emulators (Modern Base Environment)
 
 on:
   workflow_dispatch:
 
 jobs:
   build:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-latest
+    # ⭕ 公式の最新コンパイル環境のみを使用
+    container: devkitpro/devkitarm:latest
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # 📦 2回目以降を爆速にするキャッシュ機能
-      - name: Cache devkitPro Environment
-        id: cache-devkitpro
-        uses: actions/cache@v4
-        with:
-          path: /opt/devkitpro
-          key: devkitpro-official-r45-v1
-
-      # ⬇️ GitHub公式の安全なサーバーからツールを確実に引き抜きます
-      - name: Setup Legacy devkitARM r45
-        if: steps.cache-devkitpro.outputs.cache-hit != 'true'
+      - name: Install 3DS Tools & Libraries
         run: |
-          sudo mkdir -p /opt/devkitpro
-          cd /opt
-          
-          # GitHub公式のストレージから本物の圧縮ファイルを直接ダウンロード
-          sudo wget -O devkitARM_r45-x86_64-linux.tar.bz2 "https://github.com"
-          sudo tar -xjf devkitARM_r45-x86_64-linux.tar.bz2 -C devkitpro
-          
-          sudo wget -O libctru-1.0.0.tar.bz2 "https://github.com"
-          sudo tar -xjf libctru-1.0.0.tar.bz2 -C devkitpro
-          
-          sudo wget -O citro3d-1.0.0.tar.bz2 "https://github.com"
-          sudo tar -xjf citro3d-1.0.0.tar.bz2 -C devkitpro
+          dkp-pacman -Syu --noconfirm
+          dkp-pacman -S 3ds-dev --noconfirm
 
-      - name: Build VirtuaNES
-        run: |
-          export DEVKITPRO=/opt/devkitpro
-          export DEVKITARM=$DEVKITPRO/devkitARM
-          make -f virtuanes-make
+      # 🛠️ 3つのアプリをストレートに実行します
+      - name: Build VirtuaNES (FC)
+        run: make -f virtuanes-make
 
-      - name: Build PicoDrive
-        run: |
-          export DEVKITPRO=/opt/devkitpro
-          export DEVKITARM=$DEVKITPRO/devkitARM
-          make -f picodrive-make
+      - name: Build PicoDrive (MD)
+        run: make -f picodrive-make
 
-      - name: Build TemperPCE
-        run: |
-          export DEVKITPRO=/opt/devkitpro
-          export DEVKITARM=$DEVKITPRO/devkitARM
-          make -f temperpce-make
+      - name: Build TemperPCE (PCE)
+        run: make -f temperpce-make
 
       - name: Upload Build Artifacts
         uses: actions/upload-artifact@v4
