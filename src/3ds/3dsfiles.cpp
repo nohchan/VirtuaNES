@@ -1,3 +1,5 @@
+#if 0
+
 #include <algorithm>
 #include <string>
 #include <cstdio>
@@ -16,6 +18,21 @@
 #include "3dstypes.h"
 #include "3dsfiles.h"
 
+#else
+	
+#include <algorithm>
+#include <fstream>
+#include <unordered_map>
+#include <sys/stat.h>
+#include <unistd.h>
+#include <dirent.h>
+
+#include "3dsutils.h"
+#include "3dslog.h"
+#include "3dssettings.h"
+#include "3dsfiles.h"
+
+#endif
 
 static char currentDir[_MAX_PATH] = "";
 
