@@ -1,32 +1,38 @@
-name: Build 3DS Emulators (Legacy Environment)
- 
+name: Build 3DS Emulators (Archive Online)
+
 on:
   workflow_dispatch:
 
 jobs:
   build:
-    # 2016年当時の古い環境を再現するため、あえて古いUbuntuを使用します
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Setup Legacy devkitARM r45
+      # 📦 一度ビルドが成功すれば、2回目以降は一瞬で終わるキャッシュ機能
+      - name: Cache devkitPro Environment
+        id: cache-devkitpro
+        uses: actions/cache@v4
+        with:
+          path: /opt/devkitpro
+          key: devkitpro-archive-r45-v1
+
+      - name: Setup Legacy devkitARM r45 (From Archive)
+        if: steps.cache-devkitpro.outputs.cache-hit != 'true'
         run: |
-          # 2016年当時の古いdevkitARM (r45) と 3DS用の古いライブラリをダウンロードして配置
           sudo mkdir -p /opt/devkitpro
           cd /opt
           
-          # devkitARM r45 のダウンロードと展開
-          sudo wget https://leseratte10.de
+          # 🏛️ 絶対に消えないインターネットアーカイブ（Wayback Machine）の永久保存リンクから直接ダウンロード
+          sudo wget https://archive.org
           sudo tar -xjf devkitARM_r45-x86_64-linux.tar.bz2 -C devkitpro
           
-          # 当時の libctru (v1.0.0) と citro3d (v1.0.0) の展開
-          sudo wget https://leseratte10.de
+          sudo wget https://archive.org
           sudo tar -xjf libctru-1.0.0.tar.bz2 -C devkitpro
           
-          sudo wget https://leseratte10.de
+          sudo wget https://archive.org
           sudo tar -xjf citro3d-1.0.0.tar.bz2 -C devkitpro
 
       - name: Build VirtuaNES
