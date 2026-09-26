@@ -28,7 +28,7 @@ jobs:
         run: make -f temperpce-make
 
       - name: Upload Build Artifacts
-        uses: actions/artifacts@v4
+        uses: actions/upload-artifact@v4
         with:
           name: 3ds-emulators
           path: |
