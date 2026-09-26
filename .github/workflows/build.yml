@@ -1,5 +1,5 @@
 name: Build 3DS Emulators (Legacy Environment)
-
+ 
 on:
   workflow_dispatch:
 
