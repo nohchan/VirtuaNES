@@ -1,4 +1,4 @@
-name: Build 3DS Emulators (No-Pacman Fix)
+name: Build 3DS Emulators (Direct Compilation)
 
 on:
   workflow_dispatch:
@@ -6,16 +6,16 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-    # ⭕ 3DSビルド用のライブラリ群(libctru等)が、最初から「すべて導入・展開済み」の公式コンテナを指定します
-    # これにより dkp-pacman の 403 接続拒否エラーを完全に回避します
-    container: devkitpro/devkit3ds:latest
+    # ⭕ 確実に実在する公式の最新環境のみを使用
+    container: devkitpro/devkitarm:latest
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # 🪄 dkp-pacman のステップを完全に消去しました。
-      # すでに環境は整っているので、そのまま3つのアプリのビルドへ進みます。
+      # 🛠️ 403で落ちる「dkp-pacman」は一切使いません。
+      # 最新コンテナには最初から基本的な3DSツールが入っているため、
+      # 直接 make コマンドを叩いて、発生するエラーを特定します。
 
       - name: Build VirtuaNES (FC)
         run: |
