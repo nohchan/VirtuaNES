@@ -1,8 +1,3 @@
-#ifdef _NOTHROW
-#undef _NOTHROW
-#define _NOTHROW
-#endif
-
 #include <algorithm>
 #include <string>
 #include <cstdio>
