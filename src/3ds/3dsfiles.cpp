@@ -27,9 +27,6 @@
 #include <unistd.h>
 #include <dirent.h>
 
-#include "3dsutils.h"
-#include "3dslog.h"
-#include "3dssettings.h"
 #include "3dsfiles.h"
 
 #endif
